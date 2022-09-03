@@ -7,6 +7,7 @@ using FrostySdk.Ebx;
 using FrostySdk.Interfaces;
 using FrostySdk.IO;
 using FrostySdk.Managers;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -124,8 +125,9 @@ namespace ShaderDataPlugin
 
         private void ExportButton_Click(ShaderGraphEditor shaderGraphEditor, RoutedEventArgs routedEventArgs)
         {
-            FrostySaveFileDialog sfd = new FrostySaveFileDialog("Export Bytecode", "CSO (*.cso)|*.cso", "Compiled Shader Object");
-            if (sfd.ShowDialog())
+            FrostyOpenFolderDialog ofd = new FrostyOpenFolderDialog("Export Bytecode", "Compiled Shader Object");
+
+            if (ofd.ShowDialog())
             {
                 string shaderName = AssetEntry.DisplayName;
                 FrostyTaskWindow.Show("Exporting shader bytecode", "", (task) =>
@@ -133,14 +135,14 @@ namespace ShaderDataPlugin
                     if (ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville
                     ||  ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat)
                     {
-                        ExportExternalBytecode(sfd.FileName, shaderName, task);
+                        ExportExternalBytecode(ofd.FileName, shaderName, task);
                     }
                     else
                     {
-                        ExportEmbeddedBytecode(sfd.FileName, shaderName, task);
+                        ExportEmbeddedBytecode(ofd.FileName, shaderName, task);
                     }
                 });
-                logger.Log("Shaders successfully exported to " + sfd.FileName);
+                logger.Log("Shaders successfully exported to " + Path.Combine(ofd.FileName, shaderName));
             }
         }
 
@@ -150,7 +152,7 @@ namespace ShaderDataPlugin
             foreach (var path in graphInfo.RenderPaths)
             {
                 int progress = 0;
-                string dirName = Path.Combine(Path.GetDirectoryName(filename), shaderName, path.RenderPathName);
+                string dirName = Path.Combine(filename, shaderName, path.RenderPathName);
 
                 //
                 // since shaders can potentially be in multiple shaderdbs, separate them all so that each database will only need to be loaded once per render path
@@ -211,7 +213,7 @@ namespace ShaderDataPlugin
             foreach (var path in graphInfo.RenderPaths)
             {
                 int progress = 0;
-                string dirName = Path.Combine(Path.GetDirectoryName(filename), shaderName, path.RenderPathName);
+                string dirName = Path.Combine(filename, shaderName, path.RenderPathName);
 
                 foreach (var pairs in path.PermutationPairs)
                 {
