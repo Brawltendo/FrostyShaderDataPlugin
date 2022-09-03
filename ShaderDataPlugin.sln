@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31112.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShaderDataPlugin", "ShaderDataPlugin.csproj", "{48FD8CFE-5076-4839-AABF-20CD708F7EA4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Developer - Debug|Any CPU = Developer - Debug|Any CPU
+		Developer - Debug|x64 = Developer - Debug|x64
+		Release - Alpha|Any CPU = Release - Alpha|Any CPU
+		Release - Alpha|x64 = Release - Alpha|x64
+		Release - Beta|Any CPU = Release - Beta|Any CPU
+		Release - Beta|x64 = Release - Beta|x64
+		Release - Final|Any CPU = Release - Final|Any CPU
+		Release - Final|x64 = Release - Final|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Debug|Any CPU.ActiveCfg = Release - Final|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Debug|Any CPU.Build.0 = Release - Final|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Debug|x64.ActiveCfg = Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Debug|x64.Build.0 = Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Developer - Debug|Any CPU.ActiveCfg = Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Developer - Debug|x64.ActiveCfg = Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Developer - Debug|x64.Build.0 = Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Alpha|Any CPU.ActiveCfg = Release - Alpha|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Alpha|x64.ActiveCfg = Release - Alpha|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Alpha|x64.Build.0 = Release - Alpha|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Beta|Any CPU.ActiveCfg = Release - Beta|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Beta|x64.ActiveCfg = Release - Beta|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Beta|x64.Build.0 = Release - Beta|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Final|Any CPU.ActiveCfg = Release - Final|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Final|x64.ActiveCfg = Release - Final|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release - Final|x64.Build.0 = Release - Final|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release|Any CPU.ActiveCfg = Release - Final|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release|Any CPU.Build.0 = Release - Final|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release|x64.ActiveCfg = Release - Final|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Release|x64.Build.0 = Release - Final|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E7AFCC61-92DB-4BC0-AD98-FE02DA6094B5}
+	EndGlobalSection
+EndGlobal
