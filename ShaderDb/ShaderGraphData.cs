@@ -108,8 +108,210 @@ namespace ShaderDataPlugin
     }
 
     [EbxClassMeta(EbxFieldType.Struct)]
+    public class ConstantFunction
+    {
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.CString)]
+        public CString Name
+        {
+            get
+            {
+                Type type = TypeLibrary.GetType("ShaderConstantFunction");
+                string funcStr;
+                if (type != null)
+                {
+                    funcStr = type.GetEnumName(funcType);
+                    if (!string.IsNullOrEmpty(funcStr))
+                    {
+                        funcStr = funcStr.Replace("ShaderConstantFunction_", "");
+                        funcStr = char.ToLowerInvariant(funcStr[0]) + funcStr.Substring(1);
+                    }
+                    else
+                    {
+                        funcStr = "INVALID";
+                    }
+                }
+                else
+                {
+                    funcStr = "INVALID";
+                }
+                return funcStr;
+            }
+            //set;
+        }
+
+        //[IsReadOnly]
+        //[EbxFieldMeta(EbxFieldType.CString)]
+        //public CString Type { get; set; }
+
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.UInt32)]
+        public uint CBufferIndex { get; set; }
+
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.UInt32)]
+        public uint ArraySize { get; set; }
+
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.UInt32)]
+        public uint MatrixDims { get; set; }
+
+        public uint funcType;
+    }
+
+    [EbxClassMeta(EbxFieldType.Struct)]
+    public class TextureFunction
+    {
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.CString)]
+        public CString Name
+        {
+            get
+            {
+                Type type = TypeLibrary.GetType("ShaderConstantFunction");
+                string funcStr;
+                if (type != null)
+                {
+                    funcStr = type.GetEnumName(funcType);
+                    if (!string.IsNullOrEmpty(funcStr))
+                    {
+                        funcStr = funcStr.Replace("ShaderConstantFunction_", "");
+                        funcStr = char.ToLowerInvariant(funcStr[0]) + funcStr.Substring(1);
+                    }
+                    else
+                    {
+                        funcStr = "INVALID";
+                    }
+                }
+                else
+                {
+                    funcStr = "INVALID";
+                }
+                return funcStr;
+            }
+            //set;
+        }
+
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.CString)]
+        public CString Type
+        {
+            get
+            {
+                Type type = TypeLibrary.GetType("ShaderValueType");
+                string funcStr;
+                if (type != null)
+                {
+                    funcStr = type.GetEnumName(texType);
+                    if (string.IsNullOrEmpty(funcStr))
+                    {
+                        funcStr = "INVALID";
+                    }
+                }
+                else
+                {
+                    funcStr = "INVALID";
+                }
+                return funcStr;
+            }
+            //set;
+        }
+
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.UInt32)]
+        public uint Index { get; set; }
+
+        public uint funcType;
+        public uint texType;
+    }
+
+    [EbxClassMeta(EbxFieldType.Struct)]
+    public class BufferFunction
+    {
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.CString)]
+        public CString Name
+        {
+            get
+            {
+                Type type = TypeLibrary.GetType("ShaderConstantFunction");
+                string funcStr;
+                if (type != null)
+                {
+                    funcStr = type.GetEnumName(funcType);
+                    if (!string.IsNullOrEmpty(funcStr))
+                    {
+                        funcStr = funcStr.Replace("ShaderConstantFunction_", "");
+                        funcStr = char.ToLowerInvariant(funcStr[0]) + funcStr.Substring(1);
+                    }
+                    else
+                    {
+                        funcStr = "INVALID";
+                    }
+                }
+                else
+                {
+                    funcStr = "INVALID";
+                }
+                return funcStr;
+            }
+            //set;
+        }
+
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.CString)]
+        public CString Type
+        {
+            get
+            {
+                Type type = TypeLibrary.GetType("ShaderValueType");
+                string funcStr;
+                if (type != null)
+                {
+                    funcStr = type.GetEnumName(bufType);
+                    if (string.IsNullOrEmpty(funcStr))
+                    {
+                        funcStr = "INVALID";
+                    }
+                }
+                else
+                {
+                    funcStr = "INVALID";
+                }
+                return funcStr;
+            }
+            //set;
+        }
+
+        [IsReadOnly]
+        [EbxFieldMeta(EbxFieldType.UInt32)]
+        public uint Index { get; set; }
+
+        public uint funcType;
+        public uint bufType;
+    }
+
+    [EbxClassMeta(EbxFieldType.Struct)]
     public class ShaderGraphPermutation
     {
+        [IsReadOnly]
+        [DisplayName("ConstantFunctions")]
+        [Description("Contains engine constants passed into the shader.")]
+        [EbxFieldMeta(EbxFieldType.Array, arrayType: EbxFieldType.Struct)]
+        public List<ConstantFunction> ConstantFunctions { get; set; } = new List<ConstantFunction>();
+
+        [IsReadOnly]
+        [DisplayName("TextureFunctions")]
+        [Description("Contains engine textures passed into the shader.")]
+        [EbxFieldMeta(EbxFieldType.Array, arrayType: EbxFieldType.Struct)]
+        public List<TextureFunction> TextureFunctions { get; set; } = new List<TextureFunction>();
+
+        [IsReadOnly]
+        [DisplayName("BufferFunctions")]
+        [Description("Contains engine buffers passed into the shader.")]
+        [EbxFieldMeta(EbxFieldType.Array, arrayType: EbxFieldType.Struct)]
+        public List<BufferFunction> BufferFunctions { get; set; } = new List<BufferFunction>();
+
         [IsReadOnly]
         [DisplayName("ConstantValues")]
         [EbxFieldMeta(EbxFieldType.Array, arrayType: EbxFieldType.Inherited)]

@@ -219,78 +219,21 @@ namespace ShaderDataPlugin
                         reader.ReadUInt();
 
                     uint constantFunctionBlocksCount = reader.ReadUInt();
-                    // skip constant function blocks
+                    List<ConstantFunctionBlock> constantFunctionBlocks = new List<ConstantFunctionBlock>();
+                    // get constant function blocks
                     for (int i = 0; i < constantFunctionBlocksCount; ++i)
-                    {
-                        // constantCount
-                        ushort count = reader.ReadUShort();
-                        // registerCount
-                        reader.ReadUShort();
-
-                        switch ((ShaderDBVersion)Version)
-                        {
-                            case ShaderDBVersion.Battlefield4:
-                            case ShaderDBVersion.DragonAgeInquisition:
-                            case ShaderDBVersion.PvZGardenWarfare1:
-                            case ShaderDBVersion.NFSRivals:
-                                {
-                                    // constants, 8 byte struct
-                                    // uint constFunction, maps to ShaderConstantFunction
-                                    // byte index
-                                    // byte parameter
-                                    // byte arraySize
-                                    // byte matrixDims
-                                    reader.ReadBytes(8 * count);
-                                    break;
-                                }
-                            case ShaderDBVersion.NFS2015_PvZGardenWarfare2:
-                            case ShaderDBVersion.StarWarsBattlefront1:
-                            case ShaderDBVersion.NFSPayback_MECatalyst:
-                            case ShaderDBVersion.Battlefield1:
-                            case ShaderDBVersion.BattlefieldV:
-                                {
-                                    // constants, 8 byte struct
-                                    // byte   constFunction, maps to ShaderConstantFunction
-                                    // byte   parameter
-                                    // ushort index
-                                    // ushort arraySize
-                                    // ushort matrixDims
-                                    reader.ReadBytes(8 * count);
-                                    break;
-                                }
-                            case ShaderDBVersion.Anthem:
-                            case ShaderDBVersion.StarWarsSquadrons:
-                            case ShaderDBVersion.PvZBattleForNeighborville:
-                            case ShaderDBVersion.NFSHeat:
-                                {
-                                    // constants, 6 byte struct
-                                    // byte   constFunction, maps to ShaderConstantFunction
-                                    // byte   parameter
-                                    // ushort index
-                                    // ushort arraySize
-                                    reader.ReadBytes(6 * count);
-                                    break;
-                                }
-                            default:
-                                Loaded = false;
-                                return;
-                        }
-                    }
+                        constantFunctionBlocks.Add(new ConstantFunctionBlock(reader));
 
                     if (Version == (int)ShaderDBVersion.Anthem)
                         reader.ReadUInt();
 
                     uint textureFunctionBlocksCount = reader.ReadUInt();
-                    // skip texture function blocks
+                    List<TextureFunctionBlock> textureFunctionBlocks = new List<TextureFunctionBlock>();
+                    // get texture function blocks
                     for (int i = 0; i < textureFunctionBlocksCount; ++i)
-                    {
-                        // textureCount
-                        uint count = reader.ReadUInt();
+                        textureFunctionBlocks.Add(new TextureFunctionBlock(reader));
 
-                        // textures, 4 byte struct
-                        reader.ReadBytes((int)(4 * count));
-                    }
-
+                    List<BufferFunctionBlock> bufferFunctionBlocks = new List<BufferFunctionBlock>();
                     // FB2013 games (BF4, PvZ GW1, NFS Rivals, etc.) don't have buffer function blocks
                     if (Version > (int)ShaderDBVersion.NFSRivals)
                     {
@@ -298,15 +241,9 @@ namespace ShaderDataPlugin
                             reader.ReadUInt();
 
                         uint bufferFunctionBlocksCount = reader.ReadUInt();
-                        // skip buffer function blocks
+                        // get buffer function blocks
                         for (int i = 0; i < bufferFunctionBlocksCount; ++i)
-                        {
-                            // bufferCount
-                            uint count = reader.ReadUInt();
-
-                            // buffers, 3 byte unpadded/unaligned struct
-                            reader.ReadBytes((int)(3 * count));
-                        }
+                            bufferFunctionBlocks.Add(new BufferFunctionBlock(reader));
                     }
 
                     //
@@ -644,11 +581,19 @@ namespace ShaderDataPlugin
 
                                 pair.PixelShader.VertexElements = elems;
                                 pair.ps.shaderDataLookup = psPermutations[(int)solutions[solutionIndex].pixelPermutationIndex];
-                                GetShaderPermutation(shaderConstants[(int)solutions[solutionIndex].pixelConstantsIndex], ref pair.ps);
+                                GetShaderPermutation(shaderConstants[(int)solutions[solutionIndex].pixelConstantsIndex],
+                                    constantFunctionBlocks.Count > 0 ? constantFunctionBlocks[(int)pair.ps.shaderDataLookup.ConstantFunctionBlocksIndex] : null,
+                                    textureFunctionBlocks.Count > 0 ? textureFunctionBlocks[(int)pair.ps.shaderDataLookup.TextureFunctionBlocksIndex] : null,
+                                    bufferFunctionBlocks.Count > 0 ? bufferFunctionBlocks[(int)pair.ps.shaderDataLookup.BufferFunctionBlocksIndex] : null,
+                                    ref pair.ps);
 
                                 pair.VertexShader.VertexElements = elems;
                                 pair.vs.shaderDataLookup = vsPermutations[(int)solutions[solutionIndex].vertexPermutationIndex];
-                                GetShaderPermutation(shaderConstants[(int)solutions[solutionIndex].vertexConstantsIndex], ref pair.vs);
+                                GetShaderPermutation(shaderConstants[(int)solutions[solutionIndex].vertexConstantsIndex],
+                                    constantFunctionBlocks.Count > 0 ? constantFunctionBlocks[(int)pair.vs.shaderDataLookup.ConstantFunctionBlocksIndex] : null,
+                                    textureFunctionBlocks.Count > 0 ? textureFunctionBlocks[(int)pair.vs.shaderDataLookup.TextureFunctionBlocksIndex] : null,
+                                    bufferFunctionBlocks.Count > 0 ? bufferFunctionBlocks[(int)pair.vs.shaderDataLookup.BufferFunctionBlocksIndex] : null,
+                                    ref pair.vs);
 
                                 permutationPairs.Add(pair);
                             }
@@ -656,16 +601,72 @@ namespace ShaderDataPlugin
 
                         Loaded = true;
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        logger.Log($"Encountered error building shader map in database: {db.Name}");
+                        logger.Log($"Encountered error building shader map in database: {db.Name}" +
+                            $"\nMessage ---\n{ex.Message}" +
+                            $"\nStackTrace ---\n{ex.StackTrace}" +
+                            $"\nTargetSite ---\n{ex.TargetSite}");
                     }
                 }
             }
         }
 
-        private void GetShaderPermutation(GenericShaderConstants constants, ref ShaderGraphPermutation permutation)
+        private void GetShaderPermutation(GenericShaderConstants constants,
+            ConstantFunctionBlock constantFunctionBlock,
+            TextureFunctionBlock textureFunctionBlock,
+            BufferFunctionBlock bufferFunctionBlock,
+            ref ShaderGraphPermutation permutation)
         {
+            if (constantFunctionBlock != null)
+            {
+                foreach (ConstantFunctionBlock.Constant cfunc in constantFunctionBlock.Constants)
+                {
+                    permutation.ConstantFunctions.Add
+                    (
+                        new ConstantFunction
+                        {
+                            funcType = cfunc.constFunction,
+                            CBufferIndex = cfunc.index,
+                            ArraySize = cfunc.arraySize,
+                            MatrixDims = cfunc.matrixDims
+                        }
+                    );
+                }
+            }
+
+            if (textureFunctionBlock != null)
+            {
+                foreach (TextureFunctionBlock.Texture tfunc in textureFunctionBlock.Textures)
+                {
+                    permutation.TextureFunctions.Add
+                    (
+                        new TextureFunction
+                        {
+                            funcType = tfunc.constFunction,
+                            texType = tfunc.valueType,
+                            Index = tfunc.index
+                        }
+                    );
+                }
+            }
+
+            if (bufferFunctionBlock != null)
+            {
+                foreach (BufferFunctionBlock.Buffer bfunc in bufferFunctionBlock.Buffers)
+                {
+                    permutation.BufferFunctions.Add
+                    (
+                        new BufferFunction
+                        {
+                            funcType = bfunc.constFunction,
+                            bufType = bfunc.valueType,
+                            Index = bfunc.index
+                        }
+                    );
+                }
+            }
+
             permutation.ValueConstants = constants.valueConstants;
             foreach (TextureConstant tex in constants.textureConstants)
             {

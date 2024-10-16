@@ -3,6 +3,8 @@
     <Configurations>Developer - Debug;Release - Alpha;Release - Beta;Release - Final</Configurations>
     <Platforms>x64</Platforms>
     <TargetFrameworks>net48</TargetFrameworks>
+    <LangVersion>8.0</LangVersion>
+    <Nullable>enable</Nullable>
     <AssemblyTitle>VersionDataPlugin</AssemblyTitle>
     <Product>VersionDataPlugin</Product>
     <Copyright>Copyright ©  2020</Copyright>

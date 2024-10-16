@@ -11,6 +11,9 @@ namespace ShaderDataPlugin
     {
         public Guid ShaderGuid = default;
         public uint ShaderSize = 0;
+        public uint ConstantFunctionBlocksIndex = 0;
+        public uint TextureFunctionBlocksIndex = 0;
+        public uint BufferFunctionBlocksIndex = 0;
 
         public long DbOffset = 0;
         public string DbPath = "";
@@ -43,13 +46,10 @@ namespace ShaderDataPlugin
             {
                 // constantsIndex
                 reader.ReadUInt();
-                // constantFunctionBlocksIndex
-                reader.ReadUInt();
-                // textureFunctionBlocksIndex
-                reader.ReadUInt();
-                // bufferFunctionBlocksIndex
+                ConstantFunctionBlocksIndex = reader.ReadUInt();
+                TextureFunctionBlocksIndex = reader.ReadUInt();
                 if (ShaderDb.Version > (int)ShaderDBVersion.NFSRivals)
-                    reader.ReadUInt();
+                    BufferFunctionBlocksIndex = reader.ReadUInt();
             }
         }
     }
