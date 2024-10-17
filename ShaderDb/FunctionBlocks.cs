@@ -49,6 +49,7 @@ namespace ShaderDataPlugin
                     case ShaderDBVersion.StarWarsSquadrons:
                     case ShaderDBVersion.PvZBattleForNeighborville:
                     case ShaderDBVersion.NFSHeat:
+                    case ShaderDBVersion.NFSUnbound:
                         {
                             constFunction = reader.ReadByte();
                             parameter = reader.ReadByte();

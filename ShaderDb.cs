@@ -7,6 +7,9 @@ using FrostySdk.Ebx;
 using FrostySdk.Interfaces;
 using FrostySdk.IO;
 using FrostySdk.Managers;
+#if FROSTY_107
+using FrostySdk.Managers.Entries;
+#endif
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -68,6 +71,7 @@ namespace ShaderDataPlugin
 
         private uint dbSize = 0;
         static bool firstTimeLoad = true;
+        static bool textureCacheLoaded = false;
         #endregion
 
         public ShaderDb(List<BundleEntry> entriesToSearch, AssetEntry asset, ILogger inLogger)
@@ -91,7 +95,7 @@ namespace ShaderDataPlugin
             // also load the texture hash cache for the games that need it
             if (firstTimeLoad)
             {
-                if (UseCache)
+                if (UseCache && !textureCacheLoaded)
                 {
                     string cachePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ShaderDataPlugin");
                     cachePath = Path.Combine(cachePath, ((ProfileVersion)ProfilesLibrary.DataVersion).ToString());
@@ -111,11 +115,13 @@ namespace ShaderDataPlugin
                             textureHashMap.Add(hash, asset.Name);
                         }
                     }
+                    textureCacheLoaded = true;
                 }
 
                 IEnumerable<ResAssetEntry> shaderDbs = App.AssetManager.EnumerateRes((uint)Utils.HashString("IShaderDatabase", true));
                 int dbCount = shaderDbs.Count();
                 int progress = 0;
+                bool failed = false;
                 foreach (ResAssetEntry resEntry in shaderDbs)
                 {
                     task.Update($"Loading database: {resEntry.Name}", (progress++ / (double)dbCount) * 100.0);
@@ -123,14 +129,15 @@ namespace ShaderDataPlugin
                     if (!Loaded)
                     {
                         logger.Log($"A shader database has failed to load");
+                        failed = true;
                         break;
                     }
                 }
-                firstTimeLoad = false;
+                firstTimeLoad = failed;
             }
 
             uint shaderHash = (uint)Utils.HashString(assetEntry.Name, true);
-            if (shaderMap.ContainsKey(shaderHash))
+            if (shaderMap.ContainsKey(shaderHash) && !firstTimeLoad)
             {
                 Loaded = true;
                 targetData.RenderPaths = shaderMap[shaderHash];
@@ -153,10 +160,13 @@ namespace ShaderDataPlugin
                 // and this is just the beginning of many Anthem exclusive changes...
                 if (ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem)
                 {
-                    var pathBytes = db.ResMeta.Take(4).ToArray();
-                    numRenderPaths = BitConverter.ToUInt32(pathBytes, 0);
-                    // db version is the last int in the res meta
-                    Version = BitConverter.ToUInt32(db.ResMeta, 12);
+                    using (NativeReader metaReader = new NativeReader(new MemoryStream(db.ResMeta)))
+                    {
+                        numRenderPaths = metaReader.ReadUInt();
+                        metaReader.ReadUInt();
+                        dbSize = metaReader.ReadUInt();
+                        Version = metaReader.ReadUInt();
+                    }
                 }
                 else
                 {
@@ -171,7 +181,6 @@ namespace ShaderDataPlugin
                     {
                         // quality level
                         reader.ReadUInt();
-                        dbSize = reader.ReadUInt();
                     }
                     else
                     {
@@ -181,9 +190,12 @@ namespace ShaderDataPlugin
                         reader.ReadUInt();
                         // quality level
                         reader.ReadUInt();
-                        // BFV has an extra byte in the render path header
-                        if ((ShaderDBVersion)Version == ShaderDBVersion.BattlefieldV)
+                        // BFV unknown byte
+                        if (Version == (int)ShaderDBVersion.BattlefieldV)
                             reader.ReadByte();
+                        // Unbound unknown uint
+                        if (Version == (int)ShaderDBVersion.NFSUnbound)
+                            reader.ReadUInt(); // seems to always be 1
                     }
 
                     switch ((ShaderDBVersion)Version)
@@ -202,6 +214,7 @@ namespace ShaderDataPlugin
                         case ShaderDBVersion.Anthem:
                         case ShaderDBVersion.PvZBattleForNeighborville:
                         case ShaderDBVersion.NFSHeat:
+                        case ShaderDBVersion.NFSUnbound:
                             break;
                         default:
                             Loaded = false;
@@ -209,24 +222,27 @@ namespace ShaderDataPlugin
                             return;
                     }
 
+                    // shader constants size
+                    if (Version == (int)ShaderDBVersion.Anthem || Version == (int)ShaderDBVersion.NFSUnbound)
+                        reader.ReadUInt();
                     // get constants for this database
                     uint shaderConstantsCount = reader.ReadUInt();
                     List<GenericShaderConstants> shaderConstants = new List<GenericShaderConstants>();
                     for (int i = 0; i < shaderConstantsCount; ++i)
                         shaderConstants.Add(new GenericShaderConstants(reader));
 
-                    if (Version == (int)ShaderDBVersion.Anthem)
+                    // constant function blocks size
+                    if (Version == (int)ShaderDBVersion.Anthem || Version == (int)ShaderDBVersion.NFSUnbound)
                         reader.ReadUInt();
-
                     uint constantFunctionBlocksCount = reader.ReadUInt();
                     List<ConstantFunctionBlock> constantFunctionBlocks = new List<ConstantFunctionBlock>();
                     // get constant function blocks
                     for (int i = 0; i < constantFunctionBlocksCount; ++i)
                         constantFunctionBlocks.Add(new ConstantFunctionBlock(reader));
 
-                    if (Version == (int)ShaderDBVersion.Anthem)
+                    // texture function blocks size
+                    if (Version == (int)ShaderDBVersion.Anthem || Version == (int)ShaderDBVersion.NFSUnbound)
                         reader.ReadUInt();
-
                     uint textureFunctionBlocksCount = reader.ReadUInt();
                     List<TextureFunctionBlock> textureFunctionBlocks = new List<TextureFunctionBlock>();
                     // get texture function blocks
@@ -237,14 +253,15 @@ namespace ShaderDataPlugin
                     // FB2013 games (BF4, PvZ GW1, NFS Rivals, etc.) don't have buffer function blocks
                     if (Version > (int)ShaderDBVersion.NFSRivals)
                     {
-                        if (Version == (int)ShaderDBVersion.Anthem)
+                        // buffer function blocks size
+                        if (Version == (int)ShaderDBVersion.Anthem || Version == (int)ShaderDBVersion.NFSUnbound)
                             reader.ReadUInt();
-
                         uint bufferFunctionBlocksCount = reader.ReadUInt();
                         // get buffer function blocks
                         for (int i = 0; i < bufferFunctionBlocksCount; ++i)
                             bufferFunctionBlocks.Add(new BufferFunctionBlock(reader));
                     }
+
 
                     //
                     // read all shader permutations
@@ -334,6 +351,12 @@ namespace ShaderDataPlugin
                             new BFVUnkShaderPermutation1(reader, db.Name);
                     }
 
+                    // Unbound unknown 12 bytes
+                    if (Version == (int)ShaderDBVersion.NFSUnbound)
+                    {
+                        reader.Position += 12;
+                    }
+
                     // get shader solutions
                     uint solutionCount = reader.ReadUInt();
                     List<ShaderSolution> solutions = new List<ShaderSolution>();
@@ -373,7 +396,7 @@ namespace ShaderDataPlugin
                     {
                         List<VertexElementBase> elements = new List<VertexElementBase>();
 
-                        if (Version < (int)ShaderDBVersion.Anthem || Version == (int)ShaderDBVersion.StarWarsSquadrons)
+                        if (Version == (int)ShaderDBVersion.StarWarsSquadrons || Version < (int)ShaderDBVersion.Anthem)
                         {
                             uint elementsHash = reader.ReadUInt();
 
@@ -444,12 +467,18 @@ namespace ShaderDataPlugin
 
                     }
 
-                    // database versions >=249 all have a list of indices that map to the geometry declaration that a shader uses
+                    // database versions >229 all have a list of indices that map to the geometry declaration that a shader uses
                     if (Version > (int)ShaderDBVersion.BattlefieldV)
                     {
                         uint count = reader.ReadUInt();
                         for (int i = 0; i < count; ++i)
                             geomDeclLookupList.Add(reader.ReadUInt());
+                    }
+
+                    if (Version == (int)ShaderDBVersion.NFSUnbound)
+                    {
+                        // unknown data
+                        reader.ReadUInt();
                     }
 
                     uint shaderCount = reader.ReadUInt();
@@ -492,31 +521,73 @@ namespace ShaderDataPlugin
                             case ShaderDBVersion.NFSHeat:
                                 reader.ReadBytes(104);
                                 break;
+                            case ShaderDBVersion.NFSUnbound:
+                                reader.ReadBytes(284);
+                                break;
                             default:
                                 break;
                         }
 
 
                         int count = reader.ReadInt();
-                        int size = (Version == (int)ShaderDBVersion.DragonAgeInquisition || Version == (int)ShaderDBVersion.MassEffectAndromeda) ? 17 : 16;
-                        // streamableTextures:
-                        // - (4 bytes) nameHash, uint
-                        // - (4 bytes) coordType, maps to ShaderTextureCoordType
-                        // - (4 bytes) vertexUsage, maps to VertexElementUsage
-                        // - (4 bytes) textureTilesPerCoord, float
-                        // - (1 byte)  unknown, both DAI and MEA have it
-                        reader.ReadBytes(count * size);
+                        // streamableTextures
+                        switch ((ShaderDBVersion)Version)
+                        {
+                            case ShaderDBVersion.DragonAgeInquisition:
+                            case ShaderDBVersion.MassEffectAndromeda:
+                                // - (4 bytes) nameHash, uint
+                                // - (4 bytes) coordType, maps to ShaderTextureCoordType
+                                // - (4 bytes) vertexUsage, maps to VertexElementUsage
+                                // - (4 bytes) textureTilesPerCoord, float
+                                // - (1 byte)  unknown
+                                reader.ReadBytes(count * 17);
+                                break;
+                            default:
+                                // - (4 bytes) nameHash, uint
+                                // - (4 bytes) coordType, maps to ShaderTextureCoordType
+                                // - (4 bytes) vertexUsage, maps to VertexElementUsage
+                                // - (4 bytes) textureTilesPerCoord, float
+                                reader.ReadBytes(count * 16);
+                                break;
+                        }
 
                         count = reader.ReadInt();
-                        size = (Version == (int)ShaderDBVersion.DragonAgeInquisition || Version == (int)ShaderDBVersion.MassEffectAndromeda) ? 21 : 20;
-                        // streamableExternalTextures:
-                        // - (4 bytes) nameHash, uint
-                        // - (4 bytes) textureHandle, uint
-                        // - (4 bytes) coordType, maps to ShaderTextureCoordType
-                        // - (4 bytes) vertexUsage, maps to VertexElementUsage
-                        // - (4 bytes) textureTilesPerCoord, float
-                        // - (1 byte)  unknown, both DAI and MEA have it
-                        reader.ReadBytes(count * size);
+                        // streamableExternalTextures
+                        switch ((ShaderDBVersion)Version)
+                        {
+                            case ShaderDBVersion.DragonAgeInquisition:
+                            case ShaderDBVersion.MassEffectAndromeda:
+                                // - (4 bytes) nameHash, uint
+                                // - (4 bytes) textureHandle, uint
+                                // - (4 bytes) coordType, maps to ShaderTextureCoordType
+                                // - (4 bytes) vertexUsage, maps to VertexElementUsage
+                                // - (4 bytes) textureTilesPerCoord, float
+                                // - (1 byte)  unknown
+                                reader.ReadBytes(count * 21);
+                                break;
+                            case ShaderDBVersion.NFSUnbound:
+                                // - (4 bytes) nameHash, uint
+                                // - (4 bytes) textureHandle, uint
+                                // - (4 bytes) unknown
+                                // - (4 bytes) unknown
+                                // - (4 bytes) coordType, maps to ShaderTextureCoordType
+                                // - (4 bytes) vertexUsage, maps to VertexElementUsage
+                                // - (4 bytes) textureTilesPerCoord, float
+                                reader.ReadBytes(count * 28);
+                                break;
+                            default:
+                                // - (4 bytes) nameHash, uint
+                                // - (4 bytes) textureHandle, uint
+                                // - (4 bytes) coordType, maps to ShaderTextureCoordType
+                                // - (4 bytes) vertexUsage, maps to VertexElementUsage
+                                // - (4 bytes) textureTilesPerCoord, float
+                                reader.ReadBytes(count * 20);
+                                break;
+                        }
+
+                        // unknown data, seems to always be zero
+                        if (Version == (int)ShaderDBVersion.NFSUnbound)
+                            reader.ReadUInt();
 
                         count = reader.ReadInt();
                         List<uint> solutionIndices = new List<uint>();
@@ -580,12 +651,16 @@ namespace ShaderDataPlugin
                                     elems = geomDecls[geomDeclLookupList[solutionIndex]];
 
                                 pair.PixelShader.VertexElements = elems;
-                                pair.ps.shaderDataLookup = psPermutations[(int)solutions[solutionIndex].pixelPermutationIndex];
-                                GetShaderPermutation(shaderConstants[(int)solutions[solutionIndex].pixelConstantsIndex],
-                                    constantFunctionBlocks.Count > 0 ? constantFunctionBlocks[(int)pair.ps.shaderDataLookup.ConstantFunctionBlocksIndex] : null,
-                                    textureFunctionBlocks.Count > 0 ? textureFunctionBlocks[(int)pair.ps.shaderDataLookup.TextureFunctionBlocksIndex] : null,
-                                    bufferFunctionBlocks.Count > 0 ? bufferFunctionBlocks[(int)pair.ps.shaderDataLookup.BufferFunctionBlocksIndex] : null,
-                                    ref pair.ps);
+                                int pixelPermutationIdx = (int)solutions[solutionIndex].pixelPermutationIndex;
+                                if (pixelPermutationIdx > 0)
+                                {
+                                    pair.ps.shaderDataLookup = psPermutations[pixelPermutationIdx];
+                                    GetShaderPermutation(shaderConstants[(int)solutions[solutionIndex].pixelConstantsIndex],
+                                        constantFunctionBlocks.Count > 0 ? constantFunctionBlocks[(int)pair.ps.shaderDataLookup.ConstantFunctionBlocksIndex] : null,
+                                        textureFunctionBlocks.Count > 0 ? textureFunctionBlocks[(int)pair.ps.shaderDataLookup.TextureFunctionBlocksIndex] : null,
+                                        bufferFunctionBlocks.Count > 0 ? bufferFunctionBlocks[(int)pair.ps.shaderDataLookup.BufferFunctionBlocksIndex] : null,
+                                        ref pair.ps);
+                                }
 
                                 pair.VertexShader.VertexElements = elems;
                                 pair.vs.shaderDataLookup = vsPermutations[(int)solutions[solutionIndex].vertexPermutationIndex];
@@ -603,6 +678,7 @@ namespace ShaderDataPlugin
                     }
                     catch (Exception ex)
                     {
+                        Loaded = false;
                         logger.Log($"Encountered error building shader map in database: {db.Name}" +
                             $"\nMessage ---\n{ex.Message}" +
                             $"\nStackTrace ---\n{ex.StackTrace}" +
@@ -670,7 +746,16 @@ namespace ShaderDataPlugin
             permutation.ValueConstants = constants.valueConstants;
             foreach (TextureConstant tex in constants.textureConstants)
             {
-                permutation.TextureConstants.Add(UseCache ? textureHashMap[tex.nameHash] : tex.name);
+                if (!textureHashMap.ContainsKey(tex.nameHash))
+                {
+                    // I've only seen this happen with Unbound
+                    // probably some debug texture that doesn't exist in retail builds
+                    permutation.TextureConstants.Add($"Unknown texture: 0x{tex.nameHash:X8}");
+                }
+                else
+                {
+                    permutation.TextureConstants.Add(UseCache ? textureHashMap[tex.nameHash] : tex.name);
+                }
             }
             foreach (ExternalValueConstant val in constants.externalValueConstants)
             {

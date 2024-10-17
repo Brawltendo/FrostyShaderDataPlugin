@@ -44,10 +44,18 @@ namespace ShaderDataPlugin
                 else
                     stateHash = reader.ReadULong();
             }
-            if (ShaderDb.Version == (int)ShaderDBVersion.Anthem || ShaderDb.Version == (int)ShaderDBVersion.StarWarsSquadrons || ShaderDb.Version == (int)ShaderDBVersion.PvZBattleForNeighborville || ShaderDb.Version == (int)ShaderDBVersion.NFSHeat)
+            if (ShaderDb.Version == (int)ShaderDBVersion.Anthem
+            || ShaderDb.Version == (int)ShaderDBVersion.StarWarsSquadrons
+            || ShaderDb.Version == (int)ShaderDBVersion.PvZBattleForNeighborville
+            || ShaderDb.Version == (int)ShaderDBVersion.NFSHeat
+            || ShaderDb.Version == (int)ShaderDBVersion.NFSUnbound)
+            {
                 reader.ReadUShort();
+            }
             else
+            {
                 unk = reader.ReadByte();
+            }
 
             surfaceType = reader.ReadByte();
             blendMode = reader.ReadByte();
@@ -73,6 +81,7 @@ namespace ShaderDataPlugin
                 case ShaderDBVersion.StarWarsSquadrons:
                 case ShaderDBVersion.PvZBattleForNeighborville:
                 case ShaderDBVersion.NFSHeat:
+                case ShaderDBVersion.NFSUnbound:
                     // these games have an extra 3 bytes here
                     reader.ReadBytes(3);
                     break;
@@ -85,9 +94,10 @@ namespace ShaderDataPlugin
             geometryPermutationIndex = reader.ReadULong();
             hullPermutationIndex = reader.ReadULong();
             domainPermutationIndex = reader.ReadULong();
-            if (ShaderDb.Version == (int)ShaderDBVersion.BattlefieldV)
+            if (ShaderDb.Version == (int)ShaderDBVersion.BattlefieldV || ShaderDb.Version == (int)ShaderDBVersion.NFSUnbound)
             {
                 // BFV has extra permutation indices for its new (unknown) permutation types
+                // also present in NFS Unbound, seems to be unused
                 reader.ReadULong();
                 reader.ReadULong();
                 reader.ReadULong();
@@ -105,9 +115,10 @@ namespace ShaderDataPlugin
                 hullConstantsIndex = reader.ReadULong();
                 domainConstantsIndex = reader.ReadULong();
                 geometryConstantsIndex = reader.ReadULong();
-                if (ShaderDb.Version == (int)ShaderDBVersion.BattlefieldV)
+                if (ShaderDb.Version == (int)ShaderDBVersion.BattlefieldV || ShaderDb.Version == (int)ShaderDBVersion.NFSUnbound)
                 {
                     // BFV has extra constants indices for its new (unknown) permutation types
+                    // also present in NFS Unbound, seems to be unused
                     reader.ReadULong();
                     reader.ReadULong();
                     reader.ReadULong();
@@ -126,24 +137,32 @@ namespace ShaderDataPlugin
                             data = reader.ReadBytes(32);
                         else
                             data = reader.ReadBytes(24);
+                        genericShaderSolutionHash = reader.ReadGuid();
                         break;
                     case ShaderDBVersion.Anthem:
                         data = reader.ReadBytes(40);
+                        genericShaderSolutionHash = reader.ReadGuid();
+                        reader.ReadBytes(8);
                         break;
                     case ShaderDBVersion.StarWarsSquadrons:
                         data = reader.ReadBytes(32);
+                        genericShaderSolutionHash = reader.ReadGuid();
+                        reader.ReadBytes(8);
                         break;
                     case ShaderDBVersion.PvZBattleForNeighborville:
                     case ShaderDBVersion.NFSHeat:
                         data = reader.ReadBytes(7 * sizeof(ulong));
+                        genericShaderSolutionHash = reader.ReadGuid();
+                        break;
+                    case ShaderDBVersion.NFSUnbound:
+                        data = reader.ReadBytes(72);
+                        genericShaderSolutionHash = reader.ReadGuid();
+                        reader.ReadBytes(32);
                         break;
                     default:
+                        genericShaderSolutionHash = reader.ReadGuid();
                         break;
                 }
-
-                genericShaderSolutionHash = reader.ReadGuid();
-                if (ShaderDb.Version == (int)ShaderDBVersion.Anthem || ShaderDb.Version == (int)ShaderDBVersion.StarWarsSquadrons)
-                    reader.ReadBytes(8);
             }
         }
     }

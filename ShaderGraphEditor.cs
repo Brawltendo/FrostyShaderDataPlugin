@@ -7,6 +7,9 @@ using FrostySdk.Ebx;
 using FrostySdk.Interfaces;
 using FrostySdk.IO;
 using FrostySdk.Managers;
+#if FROSTY_107
+using FrostySdk.Managers.Entries;
+#endif
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -69,7 +72,7 @@ namespace ShaderDataPlugin
                 task.Update("Building texture hash cache");
                 using (NativeWriter cache = new NativeWriter(File.Create(cachePath)))
                 {
-                    IEnumerable<EbxAssetEntry> textureAssets = App.AssetManager.EnumerateEbx("TextureAsset");
+                    IEnumerable<EbxAssetEntry> textureAssets = App.AssetManager.EnumerateEbx("TextureBaseAsset");
                     int numTextures = textureAssets.Count();
                     // write count for iteration when loading
                     cache.Write(numTextures);
@@ -83,6 +86,25 @@ namespace ShaderDataPlugin
                         cache.Write(asset.Guid);
                     }
                 }
+
+#if false
+                task.Update("Exporting list of EBX names");
+                using (NativeWriter cache = new NativeWriter(File.Create(Path.Combine(Path.GetDirectoryName(cachePath), "ebxnames_lower.txt"))))
+                {
+                    IEnumerable<EbxAssetEntry> ebxAssets = App.AssetManager.EnumerateEbx();
+                    int numTextures = ebxAssets.Count();
+                    // write count for iteration when loading
+                    cache.Write(numTextures);
+
+                    int progress = 0;
+                    foreach (EbxAssetEntry asset in ebxAssets)
+                    {
+                        task.Update(progress: (progress++ / (double)numTextures) * 100.0);
+                        // build map with the texture hash as the key and asset GUID as the value to keep this as compact as possible
+                        cache.WriteLine(asset.Name.ToLower());
+                    }
+                } 
+#endif
             }
         }
 
@@ -106,7 +128,11 @@ namespace ShaderDataPlugin
                 || ProfilesLibrary.DataVersion == (int)ProfileVersion.Anthem
                 || ProfilesLibrary.DataVersion == (int)ProfileVersion.StarWarsSquadrons
                 || ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville
-                || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat)
+                || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat
+                #if FROSTY_107
+                || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedUnbound 
+                #endif
+                )
                 {
                     ShaderDb.UseCache = true;
                     BuildTextureHashCache(task);
@@ -133,7 +159,11 @@ namespace ShaderDataPlugin
                 FrostyTaskWindow.Show("Exporting shader bytecode", "", (task) =>
                 {
                     if (ProfilesLibrary.DataVersion == (int)ProfileVersion.PlantsVsZombiesBattleforNeighborville
-                    ||  ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat)
+                    ||  ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedHeat
+                    #if FROSTY_107
+                    || ProfilesLibrary.DataVersion == (int)ProfileVersion.NeedForSpeedUnbound
+                    #endif
+                    )
                     {
                         ExportExternalBytecode(ofd.FileName, shaderName, task);
                     }
@@ -229,7 +259,7 @@ namespace ShaderDataPlugin
 
                         // get bytecode resource
                         ShaderPermutation lookupData = isPs ? pairs.PixelShader.shaderDataLookup : pairs.VertexShader.shaderDataLookup;
-                        ResAssetEntry resEntry = App.AssetManager.GetResEntry($"shaders/bytecode/{lookupData.ShaderGuid}");
+                        ResAssetEntry resEntry = App.AssetManager.GetResEntry($"shaders/bytecode/{lookupData.ShaderBytecodeGuid}");
 
                         string outName = Path.Combine(dirName, type.ToString());
                         Directory.CreateDirectory(outName);

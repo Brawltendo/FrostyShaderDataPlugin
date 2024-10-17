@@ -9,7 +9,7 @@ namespace ShaderDataPlugin
 {
     public class ShaderPermutation
     {
-        public Guid ShaderGuid = default;
+        public Guid ShaderBytecodeGuid = default;
         public uint ShaderSize = 0;
         public uint ConstantFunctionBlocksIndex = 0;
         public uint TextureFunctionBlocksIndex = 0;
@@ -27,11 +27,13 @@ namespace ShaderDataPlugin
             // shader GUID
             if (ShaderDb.Version != (int)ShaderDBVersion.Anthem)
                 reader.ReadGuid();
-            if (ShaderDb.Version == (int)ShaderDBVersion.PvZBattleForNeighborville || ShaderDb.Version == (int)ShaderDBVersion.NFSHeat)
+            if (ShaderDb.Version == (int)ShaderDBVersion.PvZBattleForNeighborville
+            || ShaderDb.Version == (int)ShaderDBVersion.NFSHeat
+            || ShaderDb.Version == (int)ShaderDBVersion.NFSUnbound)
             {
                 // newer games don't embed bytecode in the database anymore
                 // in its place is a GUID which is the name of a resource containing the shader bytecode
-                ShaderGuid = reader.ReadGuid();
+                ShaderBytecodeGuid = reader.ReadGuid();
             }
             else
             {
@@ -104,6 +106,7 @@ namespace ShaderDataPlugin
                 case ShaderDBVersion.Anthem:
                 case ShaderDBVersion.PvZBattleForNeighborville:
                 case ShaderDBVersion.NFSHeat:
+                case ShaderDBVersion.NFSUnbound:
                     // permutation ends here for newer games
                     break;
                 default:
@@ -139,6 +142,7 @@ namespace ShaderDataPlugin
                 case ShaderDBVersion.Anthem:
                 case ShaderDBVersion.PvZBattleForNeighborville:
                 case ShaderDBVersion.NFSHeat:
+                case ShaderDBVersion.NFSUnbound:
                     break;
                 default:
                     break;
@@ -191,6 +195,7 @@ namespace ShaderDataPlugin
                 case ShaderDBVersion.Anthem:
                 case ShaderDBVersion.PvZBattleForNeighborville:
                 case ShaderDBVersion.NFSHeat:
+                case ShaderDBVersion.NFSUnbound:
                     break;
                 default:
                     break;
@@ -225,6 +230,7 @@ namespace ShaderDataPlugin
                 case ShaderDBVersion.Anthem:
                 case ShaderDBVersion.PvZBattleForNeighborville:
                 case ShaderDBVersion.NFSHeat:
+                case ShaderDBVersion.NFSUnbound:
                     break;
                 default:
                     break;

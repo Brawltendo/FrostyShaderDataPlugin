@@ -24,7 +24,8 @@ namespace ShaderDataPlugin
             || (ver == ShaderDBVersion.NFSPayback_MECatalyst && ProfilesLibrary.DataVersion != (int)ProfileVersion.MirrorsEdgeCatalyst) // they use the same version, yet here we are
             || ver == ShaderDBVersion.StarWarsSquadrons
             || ver == ShaderDBVersion.PvZBattleForNeighborville
-            || ver == ShaderDBVersion.NFSHeat)
+            || ver == ShaderDBVersion.NFSHeat
+            || ver == ShaderDBVersion.NFSUnbound)
             {
                 nameHash = reader.ReadUInt();
                 index = reader.ReadByte();
@@ -37,10 +38,7 @@ namespace ShaderDataPlugin
                 index = reader.ReadByte();
                 textureType = reader.ReadByte();
                 reader.Position += 6;
-                // the name is actually a 144 byte string but we can just read it like this and advance the stream so it's easier to pass to the UI later
-                long oldPos = reader.Position;
-                name = reader.ReadNullTerminatedString();
-                reader.Position = oldPos + 144;
+                name = reader.ReadSizedString(144);
             }
         }
     }
@@ -61,12 +59,15 @@ namespace ShaderDataPlugin
 
         public ExternalValueConstant(NativeReader reader)
         {
-            // the name is actually a 32 byte string but we can just read it like this and advance the stream so it's easier to pass to the UI later
-            long oldPos = reader.Position;
-            name = reader.ReadNullTerminatedString();
-            reader.Position = oldPos + 32;
+            if ((ShaderDBVersion)ShaderDb.Version == ShaderDBVersion.NFSUnbound)
+            {
+                // ParamDbKeySerialized, used for accessing shader parameters via ShaderParameterEntity and other similar game objects
+                reader.ReadGuid();
+            }
+            name = reader.ReadSizedString(32);
 
-            handle = reader.ReadUInt();
+            if ((ShaderDBVersion)ShaderDb.Version != ShaderDBVersion.NFSUnbound)
+                handle = reader.ReadUInt();
             index = reader.ReadUShort();
             arraySize = reader.ReadUShort();
             size = reader.ReadByte();
@@ -78,6 +79,12 @@ namespace ShaderDataPlugin
             defaultValue.y = reader.ReadFloat();
             defaultValue.z = reader.ReadFloat();
             defaultValue.w = reader.ReadFloat();
+
+            if ((ShaderDBVersion)ShaderDb.Version == ShaderDBVersion.NFSUnbound)
+            {
+                // unknown data
+                reader.Position += 8;
+            }
         }
     }
 
@@ -93,12 +100,15 @@ namespace ShaderDataPlugin
 
         public ExternalTextureConstant(NativeReader reader)
         {
-            // the name is actually a 32 byte string but we can just read it like this and advance the stream so it's easier to pass to the UI later
-            long oldPos = reader.Position;
-            name = reader.ReadNullTerminatedString();
-            reader.Position = oldPos + 32;
+            if ((ShaderDBVersion)ShaderDb.Version == ShaderDBVersion.NFSUnbound)
+            {
+                // ParamDbKeySerialized, used for accessing shader parameters via ShaderParameterEntity and other similar game objects
+                reader.ReadGuid();
+            }
 
-            handle = reader.ReadUInt();
+            name = reader.ReadSizedString(32);
+            if ((ShaderDBVersion)ShaderDb.Version != ShaderDBVersion.NFSUnbound)
+                handle = reader.ReadUInt();
             index = reader.ReadUShort();
             if ((ShaderDBVersion)ShaderDb.Version == ShaderDBVersion.StarWarsSquadrons)
                 reader.ReadUShort();
@@ -106,6 +116,8 @@ namespace ShaderDataPlugin
             flags = reader.ReadByte();
             if ((ShaderDBVersion)ShaderDb.Version == ShaderDBVersion.StarWarsSquadrons)
                 reader.ReadUShort();
+            if ((ShaderDBVersion)ShaderDb.Version == ShaderDBVersion.NFSUnbound)
+                reader.Position += 0xc; // 12 byte unknown data
         }
     }
 
@@ -121,11 +133,7 @@ namespace ShaderDataPlugin
 
         public ExternalBufferConstant(NativeReader reader)
         {
-            // the name is actually a 32 byte string but we can just read it like this and advance the stream so it's easier to pass to the UI later
-            long oldPos = reader.Position;
-            name = reader.ReadNullTerminatedString();
-            reader.Position = oldPos + 32;
-
+            name = reader.ReadSizedString(32);
             handle = reader.ReadUInt();
             index = reader.ReadUShort();
             valueType = reader.ReadByte();
@@ -172,6 +180,9 @@ namespace ShaderDataPlugin
             if ((ShaderDBVersion)ShaderDb.Version > ShaderDBVersion.NFSRivals || (ShaderDBVersion)ShaderDb.Version == ShaderDBVersion.DragonAgeInquisition)
                 externalBufferConstantsOffset = reader.ReadULong();
             samplerStatesOffset = reader.ReadULong();
+
+            if ((ShaderDBVersion)ShaderDb.Version == ShaderDBVersion.NFSUnbound)
+                reader.ReadULong(); // seems to always be equal to the size variable
 
             constantCount = reader.ReadUShort();
             valueConstantStart = reader.ReadUShort();

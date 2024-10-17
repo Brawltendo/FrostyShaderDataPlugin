@@ -1,12 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31112.23
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShaderDataPlugin", "ShaderDataPlugin.csproj", "{48FD8CFE-5076-4839-AABF-20CD708F7EA4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		1.0.7 - Developer - Debug|Any CPU = 1.0.7 - Developer - Debug|Any CPU
+		1.0.7 - Developer - Debug|x64 = 1.0.7 - Developer - Debug|x64
+		1.0.7 - Release|Any CPU = 1.0.7 - Release|Any CPU
+		1.0.7 - Release|x64 = 1.0.7 - Release|x64
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
 		Developer - Debug|Any CPU = Developer - Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.1.0.7 - Developer - Debug|Any CPU.ActiveCfg = 1.0.7 - Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.1.0.7 - Developer - Debug|Any CPU.Build.0 = 1.0.7 - Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.1.0.7 - Developer - Debug|x64.ActiveCfg = 1.0.7 - Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.1.0.7 - Developer - Debug|x64.Build.0 = 1.0.7 - Developer - Debug|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.1.0.7 - Release|Any CPU.ActiveCfg = 1.0.7 - Release|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.1.0.7 - Release|Any CPU.Build.0 = 1.0.7 - Release|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.1.0.7 - Release|x64.ActiveCfg = 1.0.7 - Release|x64
+		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.1.0.7 - Release|x64.Build.0 = 1.0.7 - Release|x64
 		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Debug|Any CPU.ActiveCfg = Release - Final|x64
 		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Debug|Any CPU.Build.0 = Release - Final|x64
 		{48FD8CFE-5076-4839-AABF-20CD708F7EA4}.Debug|x64.ActiveCfg = Developer - Debug|x64

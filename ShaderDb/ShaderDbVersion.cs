@@ -23,6 +23,7 @@ namespace ShaderDataPlugin
         Anthem = 249,
         StarWarsSquadrons = 252,
         PvZBattleForNeighborville = 263,
-        NFSHeat = 271
+        NFSHeat = 271,
+        NFSUnbound = 293
     }
 }

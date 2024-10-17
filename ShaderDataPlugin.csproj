@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
-    <Configurations>Developer - Debug;Release - Alpha;Release - Beta;Release - Final</Configurations>
+    <Configurations>Developer - Debug;Release - Alpha;Release - Beta;Release - Final;1.0.7 - Release;1.0.7 - Developer - Debug</Configurations>
     <Platforms>x64</Platforms>
     <TargetFrameworks>net48</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
@@ -17,6 +17,12 @@
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Developer - Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Developer\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='1.0.7 - Developer - Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Developer\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -40,8 +46,25 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
   
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='1.0.7 - Release|x64'">
+    <OutputPath>bin\Release\Final\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='1.0.7 - Release|net48|x64'">
+    <DefineConstants>$(DefineConstants);FROSTY_107</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='1.0.7 - Developer - Debug|net48|x64'">
+    <DefineConstants>$(DefineConstants);FROSTY_107</DefineConstants>
+  </PropertyGroup>
+  
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' != '1.0.7 - Release' And '$(Configuration)' != '1.0.7 - Developer - Debug'">
     <Exec Command="xcopy /Y $(TargetPath) L:\Documents\FrostyEditor_v1.0.6.0\Plugins\&#xD;&#xA;xcopy /Y $(TargetDir)$(TargetName).pdb L:\Documents\FrostyEditor_v1.0.6.0\Plugins\" />
+  </Target>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == '1.0.7 - Release' Or '$(Configuration)' == '1.0.7 - Developer - Debug'">
+    <Exec Command="xcopy /Y $(TargetPath) L:\Documents\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\Plugins\&#xD;&#xA;xcopy /Y $(TargetDir)$(TargetName).pdb L:\Documents\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\Plugins\" />
   </Target>
   
   <ItemGroup>
@@ -57,18 +80,34 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Reference Include="FrostyControls">
+    <Reference Include="FrostyControls" Condition="'$(Configuration)' == '1.0.7 - Release' Or '$(Configuration)' == '1.0.7 - Developer - Debug'">
+      <HintPath>..\..\..\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostyControls.dll</HintPath>
+    </Reference>
+    <Reference Include="FrostyControls" Condition="'$(Configuration)' != '1.0.7 - Release' And '$(Configuration)' != '1.0.7 - Developer - Debug'">
       <HintPath>..\..\FrostyControls.dll</HintPath>
     </Reference>
-    <Reference Include="FrostyCore">
+
+    <Reference Include="FrostyCore" Condition="'$(Configuration)' == '1.0.7 - Release' Or '$(Configuration)' == '1.0.7 - Developer - Debug'">
+      <HintPath>..\..\..\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostyCore.dll</HintPath>
+    </Reference>
+    <Reference Include="FrostyCore" Condition="'$(Configuration)' != '1.0.7 - Release' And '$(Configuration)' != '1.0.7 - Developer - Debug'">
       <HintPath>..\..\FrostyCore.dll</HintPath>
     </Reference>
-    <Reference Include="FrostyHash">
+
+    <Reference Include="FrostyHash" Condition="'$(Configuration)' == '1.0.7 - Release' Or '$(Configuration)' == '1.0.7 - Developer - Debug'">
+      <HintPath>..\..\..\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostyHash.dll</HintPath>
+    </Reference>
+    <Reference Include="FrostyHash" Condition="'$(Configuration)' != '1.0.7 - Release' And '$(Configuration)' != '1.0.7 - Developer - Debug'">
       <HintPath>..\..\FrostyHash.dll</HintPath>
     </Reference>
-    <Reference Include="FrostySdk">
+
+    <Reference Include="FrostySdk" Condition="'$(Configuration)' == '1.0.7 - Release' Or '$(Configuration)' == '1.0.7 - Developer - Debug'">
+      <HintPath>..\..\..\FrostyToolsuite\FrostyEditor\bin\Developer\Debug\FrostySdk.dll</HintPath>
+    </Reference>
+    <Reference Include="FrostySdk" Condition="'$(Configuration)' != '1.0.7 - Release' And '$(Configuration)' != '1.0.7 - Developer - Debug'">
       <HintPath>..\..\FrostySdk.dll</HintPath>
     </Reference>
+    
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 </Project>
